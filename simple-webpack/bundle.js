@@ -91,7 +91,6 @@ function bundle(graph) {
           return require(mapping[relativePath])
         }
         const module = {exports:{}};
-        console.log(localRequire(),'---')
         fn(localRequire,module,module.exports)
         return module.exports;
       }
