@@ -6,4 +6,5 @@ const result = babel.transform("const result = 0.1 + 0.2;",{
   ]
 });
 
-console.log(result.code, Big); // const result = 3;
+console.log(result.code); // const result = 3;
+
