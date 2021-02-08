@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <!-- 数据初始化绑定
+    1. 首先我们需要一个函数comile负责将目标节点中所有含v-model属性的元素及被双括号包裹的文本内容与对应data绑定。
+    2. 对需要绑定的目标节点，其子节点的封装过程由上面的NodeToFragment传递。
+    3. 一个Vue对象作为Model层和ViewModel
+   -->
+  <div id="app">
+    <input type="text" id="a" v-model='text'>
+    {{text}}
+  </div>
+
+  <script>
+    function nodeToFragment(node, vm) {
+      let flag = document.createDocumentFragment();
+      let child;
+      while (child = node.firstChild) {
+        compile(child, vm);
+        flag.append(child);
+      }
+      return flag;
+    }
+    
+    function compile(node, vm) {
+      // .（小数点）默认匹配除换行符之外的任何单个字符
+      var reg = /\{\{(.*)\}\}/;
+      if (node.nodeType === 1) { // 为元素节点
+        var attr = node.attributes;
+        for (var i = 0; i < attr.length; i++) {
+          // console.log(attr[i].nodeName) // nodeName 获取属性名
+          if (attr[i].nodeName == 'v-model') {
+            var name = attr[i].nodeValue; // 获取v-model的属性名 
+            node.value = vm.data[name]; // 将data的值赋值给node
+            node.removeAttribute('v-model');
+          }
+        }
+      }
+      if (node.nodeType === 3) {
+        if (reg.test(node.nodeValue)) {
+          var name = RegExp.$1; // 去除双括号->text
+          name = name.trim();
+          node.nodeValue = vm.data[name];
+        }
+      }
+    }
+    function Vue(options) {
+      this.data = options.data;
+      var id = options.el;
+      var dom = nodeToFragment(document.getElementById(id), this);
+      document.getElementById(id).appendChild(dom);
+    }
+
+    var vm = new Vue({
+      el: 'app',
+      data: {
+        text: 'helll world'
+      }
+    })
+  </script>
+</body>
+</html>

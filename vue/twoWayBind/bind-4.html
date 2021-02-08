@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <!-- 数据对象响应，这里第一步我们需要修改被绑定元素的set和get方法
+   当我们在输入框输入数据的时候，首先触发 input 事件（或者 keyup、change 事件），
+   在相应的事件处理程序中，我们获取输入框的 value 并赋值给 vm 实例的 text 属性。
+   我们会利用 defineProperty 将 data 中的 text 设置为 vm 的访问器属性，因此给 vm.text 赋值，
+   、就会触发 set 方法。在 set 方法中主要做两件事，第一是更新属性的值,
+   已经实现：修改输入框内容 => 在事件回调函数中修改属性值 => 触发属性的 set 方法
+   -->
+  <div id="app">
+    <input type="text" id="a" v-model='text'>
+    {{text}}
+  </div>
+
+  <script>
+    function nodeToFragment(node, vm) {
+      let flag = document.createDocumentFragment();
+      let child;
+      while (child = node.firstChild) {
+        compile(child, vm);
+        flag.append(child);
+      }
+      return flag;
+    }
+    
+    function compile(node, vm) {
+      // .（小数点）默认匹配除换行符之外的任何单个字符
+      var reg = /\{\{(.*)\}\}/;
+      if (node.nodeType === 1) { // 为元素节点
+        var attr = node.attributes;
+        for (var i = 0; i < attr.length; i++) {
+          // console.log(attr[i].nodeName) // nodeName 获取属性名
+          if (attr[i].nodeName == 'v-model') {
+            var name = attr[i].nodeValue; // 获取v-model的属性值 -> text
+            node.addEventListener('input', function(e) {
+              vm[name] = e.target.value;
+            })
+            // console.log(vm.data, vm['text']=='hello world','-----')
+            node.value = vm[name];
+            // node.value = vm.data[name]; // 将data的值赋值给node
+            node.removeAttribute('v-model');
+          }
+        }
+      }
+      if (node.nodeType === 3) {
+        if (reg.test(node.nodeValue)) {
+          var name = RegExp.$1; // 去除双括号->text
+          name = name.trim();
+          // node.nodeValue = vm.data[name];
+          node.nodeValue = vm[name];
+        }
+      }
+    }
+    function defineReactive(obj, key, val) {
+      Object.defineProperty(obj, key, {
+        get: function() {
+          return val;
+        },
+        set: function(newVal) {
+          if (newVal == val) return;
+          val = newVal;
+          console.log(val)
+        }
+      })
+    }
+    function observe(obj, vm) {
+      // ['text': 'helll world'] ['text']
+      Object.keys(obj).forEach((key) => {
+        defineReactive(vm, key, obj[key])
+      })
+    }
+    function Vue(options) {
+      this.data = options.data;
+      var data = this.data;
+      observe(data, this);
+      var id = options.el;
+      var dom = nodeToFragment(document.getElementById(id), this);
+      document.getElementById(id).appendChild(dom);
+    }
+
+    var vm = new Vue({
+      el: 'app',
+      data: {
+        text: 'helll world'
+      }
+    })
+  </script>
+</body>
+</html>

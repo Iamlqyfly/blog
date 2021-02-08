@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=], initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="app">
+    <input type="text" id="inputDom">
+    <span id="spanDm">2222</span>
+  </div>
+  <script>
+    let obj = {};
+    Object.defineProperty(obj, 'bindText', {
+      set(newVal) {
+        document.getElementById('inputDom').value = newVal
+        document.getElementById('spanDm').innerHTML = newVal
+      } ,
+      get() {
+        console.log('get方法被调用了')
+      }
+    })
+    document.addEventListener('keyup',(e) => {
+      obj.bindText = e.target.value; // set被赋值了
+    })
+    console.log(obj.bindText) // get被调用了
+  </script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <!-- 
+    数据对象响应，这里第一步我们需要修改被绑定元素的set和get方法
+    当我们在输入框输入数据的时候，首先触发 input 事件（或者 keyup、change 事件），
+    在相应的事件处理程序中，我们获取输入框的 value 并赋值给 vm 实例的 text 属性。
+    我们会利用 defineProperty 将 data 中的 text 设置为 vm 的访问器属性，因此给 vm.text 赋值，
+    、就会触发 set 方法。在 set 方法中主要做两件事，第一是更新属性的值,
+   
+    第三步骤-引入发布订阅模式，前面bind-4.html 仅仅是v-model的属性值text与输入框内容可同步变化，
+    但是 {{text}}文本属性并没跟着变化，
+    如何让同样绑定到 text 的文本节点也同步变化呢？这里又有一个知识点：订阅发布模式
+    发布者发出通知 => 主题对象收到通知并推送给订阅者 => 订阅者执行相应操作
+    当 set 方法触发后做的第二件事就是作为发布者发出通知：“我是属性 text，我变了”
+
+    发出通知 dep.notify() => 触发订阅者的 update 方法 => 更新视图
+    具体实现
+    1.在监听数据的过程中，会为 data 中的每一个属性生成一个主题对象 dep。
+    2.在编译 HTML 的过程中，会为每个与数据绑定相关的节点生成一个订阅者 watcher，watcher 会将自己添加到相应属性的 dep 中，
+    如何将 watcher 添加到关联属性的 dep 中
+   -->
+  <div id="app">
+    <input type="text" id="a" v-model='text'>
+    {{text}}
+  </div>
+
+  <script>
+    function nodeToFragment(node, vm) {
+      let flag = document.createDocumentFragment();
+      let child;
+      while (child = node.firstChild) {
+        compile(child, vm);
+        flag.append(child);
+      }
+      return flag;
+    }
+    
+    function compile(node, vm) {
+      // .（小数点）默认匹配除换行符之外的任何单个字符
+      var reg = /\{\{(.*)\}\}/;
+      if (node.nodeType === 1) { // 为元素节点
+        var attr = node.attributes;
+        for (var i = 0; i < attr.length; i++) {
+          // console.log(attr[i].nodeName) // nodeName 获取属性名
+          if (attr[i].nodeName == 'v-model') {
+            var name = attr[i].nodeValue; // 获取v-model的属性值 -> text
+            node.addEventListener('input', function(e) {
+              vm[name] = e.target.value;
+            })
+            // console.log(vm.data, vm['text']=='hello world','-----')
+            node.value = vm[name];
+            // node.value = vm.data[name]; // 将data的值赋值给node
+            node.removeAttribute('v-model');
+          }
+        }
+        new Watcher(vm, node, name, 'input');
+      }
+      if (node.nodeType === 3) {
+        if (reg.test(node.nodeValue)) {
+          var name = RegExp.$1; // 去除双括号->text
+          name = name.trim();
+          // node.nodeValue = vm.data[name];
+          // node.nodeValue = vm[name];
+          new Watcher(vm, node, name, 'text');
+        }
+      }
+    }
+    function defineReactive(obj, key, val) {
+      var dep = new Dep();
+      Object.defineProperty(obj, key, {
+        get: function() {
+          // 添加订阅者watcher到主题对象Dep
+          // Dep.target存在，将目标元素添加到当前data属性的订阅者列表中
+          if (Dep.target) dep.addSub(Dep.target);
+          return val;
+        },
+        set: function(newVal) {
+          if (newVal == val) return;
+          val = newVal;
+          dep.notify(); // 作为发布者发出通知
+          console.log(val)
+        }
+      })
+    }
+    function observe(obj, vm) {
+      Object.keys(obj).forEach((key) => {
+        defineReactive(vm, key, obj[key])
+      })
+    }
+
+    function Dep() {
+      this.subs = []
+    }
+
+    Dep.prototype = {
+      addSub: function(sub) {
+        this.subs.push(sub);
+      },
+      notify: function() {
+        this.subs.forEach((sub) => {
+          sub.update();
+        })
+      },
+      remove: function(arr, item) {
+        if (arr.length) {
+          const index = arr.indexof(item);
+          if (index > -1) {
+            return arr.splice(index, 1)
+          }
+        }
+      }
+    }
+    /**
+    * watcher方法的实现
+    * 1.将自己赋给了一个全局变量 Dep.target
+    * 2.执行了update方法，进而执行了get方法，get的方法读取了vm的访问器属性，
+    * 从而触发了访问器属性的get方法。get方法中将该watcher添加到了对应访问器属性的Dep中
+    * 3.获取属性的值，更新视图
+    * 4. 将Dep.target设为空，因为它是全局变量，也是 watcher 与dep 关联的唯一桥梁，任何时刻都必须保证 Dep.target 只有一个值。
+    * */
+    function Watcher (vm, node, name, nodeType) {
+      Dep.target = this; // 1.将自己赋给了一个全局变量 Dep.target
+      this.name = name;
+      this.node = node;
+      this.vm = vm;
+      this.nodeType = nodeType;
+      this.update(); //初次绑定时进行更新 2.执行了update方法，进而执行了get方法，get的方法读取了vm的访问器属性，
+        // 从而触发了访问器属性的get方法。get方法中将该watcher添加到了对应访问器属性的Dep中
+      Dep.target = null // 将Dep.target设为空，因为它是全局变量，也是 watcher 与dep 关联的唯一桥梁，任何时刻都必须保证 Dep.target 只有一个值
+    }
+    Watcher.prototype = {
+      update: function() {
+        this.get(); // 先获取value值再赋值
+        if (this.nodeType == 'input') {
+          this.node.value = this.value;  // 3.获取属性的值，更新视图
+        }
+        if (this.nodeType == 'text') {
+          this.node.nodeValue = this.value; // 3.获取属性的值，更新视图
+        }
+      },
+      get: function() {
+        this.value = this.vm[this.name]; // 触发相应属性的get
+      }
+    }
+
+    function Vue(options) {
+      this.data = options.data;
+      var data = this.data;
+      observe(this.data, this); // 监听数据
+      var id = options.el;
+      var dom = nodeToFragment(document.getElementById(id), this); // 编译HTML
+      document.getElementById(id).appendChild(dom);
+    }
+    /*
+      每当 new 一个 Vue，主要做了两件事：
+      第一个是监听数据：observe(data)，
+      第二个是编译 HTML：nodeToFragement(id)
+    */
+    var vm = new Vue({
+      el: 'app',
+      data: {
+        text: 'helll world'
+      }
+    })
+  </script>
+</body>
+</html>

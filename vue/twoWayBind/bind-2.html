@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="app">
+    <input type="text" id="a">
+    <span id="b"></span>
+  </div>
+  <script>
+    // 劫持子节点
+    var dom = nodeToFragment(document.getElementById('app'));
+    console.log(dom)
+    function nodeToFragment (node) {
+      let flag = document.createDocumentFragment();
+      let child;
+      while (child = node.firstChild) {
+        flag.append(child);  // 劫持node的所以子节点
+        // flag.appendChild(child);  // 劫持node的所以子节点
+      }
+      return flag;
+    }
+    document.getElementById('app').appendChild(dom); // 再将 DocumentFragment 整体返回插入挂载目标- 返回到app中,
+  </script>
+</body>
+</html>
