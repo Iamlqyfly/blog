@@ -1,6 +1,6 @@
 {
   "name": "learn-blog",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "日常学习总结",
   "main": "index.js",
   "scripts": {
