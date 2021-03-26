@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html ng-app="App">
+
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>实现500px/google photo列表布局</title>
+  <style>
+    section {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    section::after {
+      content: '';
+      flex-grow: 999999999;
+    }
+
+    div {
+      margin: 2px;
+      background-color: violet;
+      position: relative;
+    }
+
+    i {
+      display: block;
+    }
+
+    img {
+      position: absolute;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      vertical-align: bottom;
+    }
+  </style>
+  <base href="https://xieranmaya.github.io/images/cats/">
+</head>
+
+<body ng-controller="ImageLayout">
+  <section>
+    <!-- 
+      1.剩余空间的分配: flex-grow: 每行元素在 grow 的时候，保持原有比例且高度相同-
+      2.200 是容器的宽度 
+    -->
+    <div ng-repeat="img in imgs" style="width:{{img.width*200/img.height}}px;flex-grow:{{img.width*200/img.height}}">
+      <i style="padding-bottom:{{img.height/img.width*100}}%">
+        <img src="{{img.url}}" alt="">
+      </i>
+    </div>
+  </section>
+  <script>
+    angular.module('App', [])
+    .controller('ImageLayout', ImageLayout)
+    function ImageLayout($scope, $http) {
+      $http.get('https://xieranmaya.github.io/images/cats/cats.json').success(function (imgs) {
+        $scope.imgs = imgs
+      })
+    }
+  </script>
+</body>
+
+</html>

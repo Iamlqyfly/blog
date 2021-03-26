@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .masonry {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        column-gap: 5px;
+        grid-auto-rows: 10px;
+      }
+      .item {
+        grid-row-start: auto;
+      }
+    </style>
+  </head>
+  <div id="app">
+    <div class="masonry">
+      <img
+        ref="imgs"
+        class="item"
+        :url="i.img"
+        height="100%"
+        width="100%"
+        :key="i.id"
+        v-for="i in Array.from(list)"
+      />
+    </div>
+  </div>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data() {
+          return {
+            list: []
+          };
+        },
+        created() {
+          this.getData();
+        },
+        methods: {
+          getData() {
+            var url = "./data.json"; 
+            var request = new XMLHttpRequest();
+            request.open("get", url); 
+            request.send(null);
+            request.onload = () => {
+              if (request.status == 200) {
+                var json = JSON.parse(request.responseText);
+                this.list = json
+              }
+            }
+          }
+        },
+        mounted() {
+          setTimeout(() => {
+            Array.from(this.$refs.imgs).forEach(function (img, index) {
+              let src = img.getAttribute("url");
+              let image = new Image();
+              image.src = src;
+              let width = img.width; // 当前宽度
+              console.log(width, img.height, '-before')
+              image.onload = function () {
+                let w = image.width; // 图片原宽
+                let h = image.height; // 图片原高
+                let height = Math.round((h * width) / w); // image-dom的真实高度(依据当前宽度及图片真实宽高)
+                img.src = src;
+                // 设置当前跨越几个网格(每个网格10px)
+                img.style.gridRowEnd = `span ${~~(height / 10)}`;
+              };
+            });
+          }, 100)
+        }
+      });
+    </script>
+  </body>
+</html>

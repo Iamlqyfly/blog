@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .masonry {
+        display: flex;
+        flex-direction: row;
+      }
+      .colmun {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 0 2px;
+      }
+      .item {
+        margin-bottom: 5px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <div id="app">
+    <div class="masonry">
+      <div class="colmun">
+        <img class="item" :src="i.img" :key="i.id" v-for="i in data1" />
+      </div>
+      <div class="colmun">
+        <img class="item" :src="i.img" :key="i.id" v-for="i in data2" />
+      </div>
+      <div class="colmun">
+        <img class="item" :src="i.img" :key="i.id" v-for="i in data3" />
+      </div>
+    </div>
+  </div>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data() {
+          return {
+            //第一列
+            data1: [],
+            //第二列
+            data2: [],
+            //第三列
+            data3: [],
+          };
+        },
+        created() {
+          this.getData();
+        },
+        methods: {
+          getData() {
+            var url = "./data.json";
+            var request = new XMLHttpRequest();
+            request.open("get", url);
+            request.send(null);
+            request.onload = () => {
+              if (request.status == 200) {
+                var data = JSON.parse(request.responseText);
+                let i = 0;
+                while (i < data.length) {
+                  this.data1.push(data[i++]);
+                  if (i < data.length) {
+                    this.data2.push(data[i++]);
+                  }
+                  if (i < data.length) {
+                    this.data3.push(data[i++]);
+                  }
+                }
+              }
+            };
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
